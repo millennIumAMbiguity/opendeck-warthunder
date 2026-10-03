@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="stylesheet" href="style.css" />
+		<script src="common.js"></script>
+		<script>
+			let update = () => {};
+
+			function connectElgatoStreamDeckSocket(port, uuid, registerEvent, info, actionInfo) {
+				actionInfo = JSON.parse(actionInfo);
+				const send = connect(port, uuid, registerEvent, actionInfo);
+				const s = actionInfo.payload.settings ?? {};
+				const isDial = actionInfo.payload.controller === "Encoder";
+				if (!isDial) for (const id of ["cw-row", "ccw-row"]) document.getElementById(id).style.display = "none";
+
+				for (const k of ["key", "keyCw", "keyCcw"]) bindKeyInput(document.getElementById(k), s[k], () => update());
+				document.getElementById("tap").checked = s.tap ?? false;
+				update = () => {
+					const out = { tap: document.getElementById("tap").checked };
+					for (const k of ["key", "keyCw", "keyCcw"]) {
+						const v = document.getElementById(k).value.trim();
+						if (v) out[k] = v;
+					}
+					send(out);
+				};
+			}
+		</script>
+	</head>
+	<body>
+		<div class="row"><label for="key">Press (held)</label><input id="key" /></div>
+		<div class="row"><label for="tap">Tap once</label><input id="tap" type="checkbox" onchange="update()" /><span class="hint" style="margin:0">for switches: one key press when flipped, instead of holding</span></div>
+		<div class="row" id="cw-row"><label for="keyCw">Turn clockwise</label><input id="keyCw" /></div>
+		<div class="row" id="ccw-row"><label for="keyCcw">Turn anticlockwise</label><input id="keyCcw" /></div>
+		<p class="hint">Sent as hardware scancodes to the focused window, so War Thunder sees them. F13–F24 aren't on normal keyboards, so they never clash with your existing binds. In War Thunder's controls menu, click a control and press the panel button to bind it.</p>
+	</body>
+</html>

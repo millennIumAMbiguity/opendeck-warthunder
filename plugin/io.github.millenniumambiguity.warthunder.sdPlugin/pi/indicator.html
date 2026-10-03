@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="stylesheet" href="style.css" />
+		<script src="common.js"></script>
+		<script>
+			const PRESETS = [
+				{ name: "Gear down", field: "gear", op: "above", threshold: 50, label: "GEAR" },
+				{ name: "Flaps out", field: "flaps", op: "above", threshold: 5, label: "FLAPS" },
+				{ name: "Airbrake out", field: "airbrake", op: "above", threshold: 5, label: "BRAKE" },
+				{ name: "Low fuel", field: "fuel", op: "below", threshold: 20, label: "FUEL" },
+				{ name: "High G", field: "g", op: "above", threshold: 6, label: "G" },
+				{ name: "High AoA", field: "aoa", op: "above", threshold: 15, label: "AoA" },
+				{ name: "Throttle over 100% (WEP)", field: "throttle", op: "above", threshold: 100, label: "WEP" },
+				{ name: "Low altitude (under 300 m)", field: "alt", op: "below", threshold: 300, label: "LOW" },
+			];
+			let update = () => {};
+
+			function connectElgatoStreamDeckSocket(port, uuid, registerEvent, info, actionInfo) {
+				actionInfo = JSON.parse(actionInfo);
+				const send = connect(port, uuid, registerEvent, actionInfo);
+				const s = actionInfo.payload.settings ?? {};
+
+				const field = document.getElementById("field");
+				const unit = document.getElementById("unit");
+				const unitRow = document.getElementById("unit-row");
+				const op = document.getElementById("op");
+				const threshold = document.getElementById("threshold");
+				const label = document.getElementById("label");
+				const color = document.getElementById("color");
+				const preset = document.getElementById("preset");
+
+				fillSelect(preset, [["", "Choose a preset…"], ...PRESETS.map((p, i) => [String(i), p.name])]);
+				fillSelect(field, FIELDS.map((f) => [f.id, f.label]), s.field ?? "gear");
+				fillUnits(field.value, unit, unitRow, s.unit);
+				op.value = s.op ?? "above";
+				threshold.value = s.threshold ?? 50;
+				label.value = s.label ?? "";
+				label.placeholder = SHORT[field.value];
+				color.value = s.color ?? "#ffb000";
+
+				bindKeyInput(document.getElementById("key"), s.key, () => update());
+				document.getElementById("tap").checked = s.tap ?? false;
+
+				preset.onchange = () => {
+					const p = PRESETS[Number(preset.value)];
+					if (!p) return;
+					field.value = p.field;
+					fillUnits(field.value, unit, unitRow);
+					op.value = p.op;
+					threshold.value = p.threshold;
+					label.value = p.label;
+					preset.value = "";
+					update();
+				};
+				field.onchange = () => {
+					fillUnits(field.value, unit, unitRow);
+					label.placeholder = SHORT[field.value];
+					update();
+				};
+
+				update = () => {
+					const out = { field: field.value, op: op.value, color: color.value, tap: document.getElementById("tap").checked };
+					const t = Number(threshold.value);
+					if (threshold.value !== "" && !isNaN(t)) out.threshold = t;
+					if (unitRow.style.display !== "none") out.unit = unit.value;
+					if (label.value.trim()) out.label = label.value.trim();
+					const key = document.getElementById("key").value.trim();
+					if (key) out.key = key;
+					send(out);
+				};
+			}
+		</script>
+	</head>
+	<body>
+		<div class="row"><label for="preset">Preset</label><select id="preset"></select></div>
+		<div class="row"><label for="field">Value</label><select id="field"></select></div>
+		<div class="row" id="unit-row"><label for="unit">Unit</label><select id="unit" onchange="update()"></select></div>
+		<div class="row">
+			<label for="op">Lit when</label>
+			<select id="op" onchange="update()"><option value="above">above</option><option value="below">below</option></select>
+			<input id="threshold" type="number" oninput="update()" />
+		</div>
+		<div class="row"><label for="label">Label</label><input id="label" oninput="update()" /></div>
+		<div class="row"><label for="color">Lit color</label><input id="color" type="color" onchange="update()" /></div>
+		<h4>Key sent to the game</h4>
+		<div class="row"><label for="key">Press (held)</label><input id="key" /></div>
+		<div class="row"><label for="tap">Tap once</label><input id="tap" type="checkbox" onchange="update()" /><span class="hint" style="margin:0">for switches: one key press when flipped, instead of holding</span></div>
+		<p class="hint">On the Multi Panel's AP–REV keys this drives the button LED. Dark when the game isn't running or you're not flying.</p>
+	</body>
+</html>

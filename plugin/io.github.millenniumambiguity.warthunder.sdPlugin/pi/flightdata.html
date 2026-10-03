@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="stylesheet" href="style.css" />
+		<script src="common.js"></script>
+		<script>
+			let update = () => {};
+
+			function connectElgatoStreamDeckSocket(port, uuid, registerEvent, info, actionInfo) {
+				actionInfo = JSON.parse(actionInfo);
+				const send = connect(port, uuid, registerEvent, actionInfo);
+				const s = actionInfo.payload.settings ?? {};
+
+				const column = actionInfo.payload.coordinates?.column ?? -1;
+				const panelDial = actionInfo.payload.controller === "Encoder" && actionInfo.device.startsWith("pz-") && column >= 0 && column <= 4;
+				const names = ["ALT", "VS", "IAS", "HDG", "CRS"];
+				document.getElementById("where").innerText = panelDial
+					? `Also shown on the Multi Panel display when the selector is on ${column < 2 ? "ALT or VS" : names[column]}. Polling only runs while shown.`
+					: "Shown as the title. Polling only runs while this is on screen and the game is running.";
+				if (!(panelDial && column <= 1)) document.getElementById("row-row").style.display = "none";
+				document.getElementById("panel-hint").style.display = panelDial ? "block" : "none";
+
+				const field = document.getElementById("field");
+				const unit = document.getElementById("unit");
+				const unitRow = document.getElementById("unit-row");
+				fillSelect(field, FIELDS.map((f) => [f.id, f.label]), s.field ?? "ias");
+				fillUnits(field.value, unit, unitRow, s.unit);
+				document.getElementById("label").value = s.label ?? "";
+				document.getElementById("label").placeholder = SHORT[field.value];
+				document.getElementById("showLabel").checked = s.showLabel ?? true;
+				document.getElementById("showUnit").checked = s.showUnit ?? true;
+				document.getElementById("row").value = s.row ?? "";
+
+				bindKeyInput(document.getElementById("keyCw"), s.keyCw, () => update());
+				bindKeyInput(document.getElementById("keyCcw"), s.keyCcw, () => update());
+				bindKeyInput(document.getElementById("key"), s.key, () => update());
+				const isDial = actionInfo.payload.controller === "Encoder";
+				if (!isDial) for (const id of ["cw-row", "ccw-row"]) document.getElementById(id).style.display = "none";
+				if (panelDial) document.getElementById("press-row").style.display = "none"; // panel knob has no push
+
+				field.onchange = () => {
+					fillUnits(field.value, unit, unitRow);
+					document.getElementById("label").placeholder = SHORT[field.value];
+					update();
+				};
+
+				update = () => {
+					const out = {
+						field: field.value,
+						showLabel: document.getElementById("showLabel").checked,
+						showUnit: document.getElementById("showUnit").checked,
+					};
+					if (unitRow.style.display !== "none") out.unit = unit.value;
+					const label = document.getElementById("label").value.trim();
+					if (label) out.label = label;
+					const row = document.getElementById("row").value;
+					if (row) out.row = row;
+					for (const k of ["keyCw", "keyCcw", "key"]) {
+						const v = document.getElementById(k).value.trim();
+						if (v) out[k] = v;
+					}
+					send(out);
+				};
+			}
+		</script>
+	</head>
+	<body>
+		<p class="hint" id="where"></p>
+		<div class="row"><label for="field">Show</label><select id="field"></select></div>
+		<div class="row" id="unit-row"><label for="unit">Unit</label><select id="unit" onchange="update()"></select></div>
+		<div class="row"><label for="label">Label</label><input id="label" oninput="update()" /></div>
+		<div class="row"><label for="showLabel">Show label</label><input id="showLabel" type="checkbox" onchange="update()" /></div>
+		<div class="row"><label for="showUnit">Show unit</label><input id="showUnit" type="checkbox" onchange="update()" /></div>
+		<div class="row" id="row-row">
+			<label for="row">Display row</label>
+			<select id="row" onchange="update()"><option value="">Default</option><option value="upper">Upper</option><option value="lower">Lower</option></select>
+		</div>
+		<h4>Keys sent to the game</h4>
+		<div class="row" id="cw-row"><label for="keyCw">Knob clockwise</label><input id="keyCw" /></div>
+		<div class="row" id="ccw-row"><label for="keyCcw">Knob anticlockwise</label><input id="keyCcw" /></div>
+		<div class="row" id="press-row"><label for="key">Press (held)</label><input id="key" /></div>
+		<p class="hint" id="panel-hint">Panel shows digits only: Mach ×100 (0.85 → 85), G and AoA ×10 (6.5 → 65). IAS/HDG/CRS positions show 3 digits.</p>
+	</body>
+</html>

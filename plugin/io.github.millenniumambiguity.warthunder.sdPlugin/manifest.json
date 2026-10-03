@@ -1,0 +1,97 @@
+{
+  "Name": "War Thunder Telemetry",
+  "Description": "Live War Thunder flight data on Stream Deck keys/dials and the Saitek Multi Panel display. Reads the game's local telemetry (127.0.0.1:8111) and only polls while something is shown.",
+  "Author": "millennIumAMbiguity",
+  "Version": "0.1.0",
+  "Icon": "assets/icon",
+  "Category": "War Thunder",
+  "CategoryIcon": "assets/icon",
+  "CodePathWin": "bin/win-x64/warthunder-telemetry.exe",
+  "CodePathLin": "bin/linux-x64/warthunder-telemetry",
+  "OS": [
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10"
+    },
+    {
+      "Platform": "linux"
+    }
+  ],
+  "SDKVersion": 2,
+  "Software": {
+    "MinimumVersion": "6.0"
+  },
+  "Actions": [
+    {
+      "Name": "Flight Data",
+      "UUID": "io.github.millenniumambiguity.warthunder.flightdata",
+      "Icon": "assets/flightdata",
+      "Tooltip": "Show a flight value (IAS, altitude, heading...). On a Multi Panel knob dial it also shows on the panel display.",
+      "Controllers": [
+        "Keypad",
+        "Encoder"
+      ],
+      "States": [
+        {
+          "Image": "assets/flightdata",
+          "TitleAlignment": "middle"
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "PropertyInspectorPath": "pi/flightdata.html"
+    },
+    {
+      "Name": "Text",
+      "UUID": "io.github.millenniumambiguity.warthunder.text",
+      "Icon": "assets/flightdata",
+      "Tooltip": "Several values on one key with a text template, e.g. aircraft name, IAS and altitude.",
+      "Controllers": [
+        "Keypad",
+        "Encoder"
+      ],
+      "States": [
+        {
+          "Image": "assets/flightdata",
+          "TitleAlignment": "middle",
+          "FontSize": 12
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "PropertyInspectorPath": "pi/text.html"
+    },
+    {
+      "Name": "Indicator",
+      "UUID": "io.github.millenniumambiguity.warthunder.indicator",
+      "Icon": "assets/indicator",
+      "Tooltip": "Lights up when a condition is true (gear down, flaps out, low fuel...). On the Multi Panel AP-REV keys it drives the button LED.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "assets/indicator",
+          "TitleAlignment": "middle"
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "PropertyInspectorPath": "pi/indicator.html"
+    },
+    {
+      "Name": "Send Key",
+      "UUID": "io.github.millenniumambiguity.warthunder.sendkey",
+      "Icon": "assets/sendkey",
+      "Tooltip": "Send a key to War Thunder on press or knob turn (scancodes, works in-game).",
+      "Controllers": [
+        "Keypad",
+        "Encoder"
+      ],
+      "States": [
+        {
+          "Image": "assets/sendkey"
+        }
+      ],
+      "SupportedInMultiActions": true,
+      "PropertyInspectorPath": "pi/sendkey.html"
+    }
+  ]
+}
